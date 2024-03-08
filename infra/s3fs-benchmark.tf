@@ -25,7 +25,7 @@ resource "aws_s3_bucket" "fusebenchresults" {
 }
 
 resource "aws_iam_role" "fuse_benchmark_iam_role" {
-  name               = "fuse_benchmark"
+  name = "fuse_benchmark"
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -74,13 +74,13 @@ resource "aws_s3_bucket" "s3fs_benchmark" {
 }
 
 resource "aws_instance" "s3fs_benchmark" {
-  count = length(var.s3fs_benchmark_configs)
+  count                  = length(var.s3fs_benchmark_configs)
   ami                    = "ami-08a7297c0f05d943d"
-  instance_type          = "t4g.nano"         # "c6g.4xlarge"
+  instance_type          = "t4g.nano" # "c6g.4xlarge"
   iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
   vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
   user_data              = file("${path.module}/configs/${var.s3fs_benchmark_configs[count.index]}")
-  tags                   = {
+  tags = {
     Name = var.s3fs_benchmark_configs[count.index]
   }
 }
