@@ -33,7 +33,7 @@ directory=${MOUNT}
 rw=${FIORW}
 rwmixwrite=${RWMIXWRITE}
 rwmixread=${RWMIXREAD}
-size=42k
+size=${SIZE}
 EOF
 
 touch /home/ubuntu/4.txt
@@ -42,7 +42,7 @@ fio ${FIO_CONFIG} > ${RESULT}
 
 touch /home/ubuntu/5.txt
 
-aws s3 cp ${RESULT} s3://${REPORT_BUCKET}/${REPORT_NAME}.report
+aws s3 cp ${RESULT} s3://${REPORT_BUCKET}/${REPORT_NAME}
 
 touch /home/ubuntu/6.txt
 
