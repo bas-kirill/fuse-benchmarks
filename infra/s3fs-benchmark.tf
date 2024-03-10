@@ -12,8 +12,7 @@ variable "ubuntu" {
 
 variable "instance_type" {
   type    = string
-  default = "t4g.nano"
-  # "c6g.4xlarge" #
+  default = "c6g.4xlarge"
 }
 
 variable "fio_jobs" {
