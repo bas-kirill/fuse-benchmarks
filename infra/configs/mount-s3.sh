@@ -3,13 +3,14 @@ set -e
 sudo su
 
 apt update -y
-apt install s3fs -y
 apt install fio -y
 apt install awscli -y
+wget -P /home/ubuntu https://s3.amazonaws.com/mountpoint-s3-release/latest/arm64/mount-s3.deb
+apt-get install /home/ubuntu/mount-s3.deb -y
 
 mkdir ${MOUNT}
 
-s3fs ${BUCKET} ${MOUNT} -o parallel_count=400,ensure_diskfree=1024,del_cache,use_cache=/tmp/,iam_role=${IAM_ROLE}
+mount-s3 ${BUCKET} ${MOUNT}
 
 cat <<EOF > ${FIO_CONFIG}
 [global]
