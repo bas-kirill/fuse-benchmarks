@@ -5,7 +5,7 @@ apt update -y
 apt install fio -y
 apt install awscli -y
 
-apt install golang-go -y  # installing "go" cli command
+apt install golang-go -y  # install "go" cli command
 git clone https://github.com/yandex-cloud/geesefs /home/ubuntu/geesefs
 cd /home/ubuntu/geesefs
 
