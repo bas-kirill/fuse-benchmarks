@@ -8,6 +8,8 @@ data "aws_region" "current" {}
 variable "ubuntu" {
   type    = string
   default = "ami-08a7297c0f05d943d"
+  # "ami-00381a880aa48c6c6"
+#
 }
 
 variable "instance_type" {
@@ -139,25 +141,21 @@ resource "aws_s3_bucket" "reports" {
   bucket = "fuse-benchmarks-${local.formatted_timestamp}"
 }
 
-locals {
-  instances_public_ips  = [for instance in aws_instance.s3fs_42kb : instance.public_ip]
-  s3_benchmarks_buckets = [for bucket in aws_s3_bucket.goofys_buckets : bucket.bucket]
-}
-
 resource "aws_instance" "s3fs_42kb" {
   count                  = length(local.fio_job_names)
   ami                    = var.ubuntu
   instance_type          = var.instance_type
   iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
   vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
   user_data              = templatefile("${path.module}/configs/s3fs.sh", {
     AWS_REGION    = data.aws_region.current.name,
     MOUNT         = "/tmp/s3",
     BUCKET        = aws_s3_bucket.goofys_buckets[count.index].bucket,
     FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
     IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-42kb.report",
-    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-42kb.report",
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-42kb.txt",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-42kb.txt",
     REPORT_BUCKET = aws_s3_bucket.reports.bucket,
     JOBNAME       = local.fio_job_names[count.index],
     NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
@@ -171,147 +169,144 @@ resource "aws_instance" "s3fs_42kb" {
   }
 }
 
-#resource "aws_instance" "s3fs_1m" {
-#  count                  = length(local.fio_job_names)
-#  ami                    = var.ubuntu
-#  instance_type          = var.instance_type
-#  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
-#  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
-#  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
-#    AWS_REGION    = data.aws_region.current.name,
-#    MOUNT         = "/tmp/s3",
-#    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
-#    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
-#    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-#    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-1m.report",
-#    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-1m.report",
-#    REPORT_BUCKET = aws_s3_bucket.s3fs_results.bucket,
-#    JOBNAME       = local.fio_job_names[count.index],
-#    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
-#    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
-#    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
-#    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
-#    SIZE          = "1m"
-#  })
-#  tags = {
-#    Name = "s3fs-${local.fio_job_names[count.index]}-1m"
-#  }
-#}
-#
-#resource "aws_instance" "s3fs_63m" {
-#  count                  = length(local.fio_job_names)
-#  ami                    = var.ubuntu
-#  instance_type          = var.instance_type
-#  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
-#  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
-#  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
-#    AWS_REGION    = data.aws_region.current.name,
-#    MOUNT         = "/tmp/s3",
-#    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
-#    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
-#    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-#    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-63m.report",
-#    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-63m.report",
-#    REPORT_BUCKET = aws_s3_bucket.s3fs_results.bucket,
-#    JOBNAME       = local.fio_job_names[count.index],
-#    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
-#    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
-#    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
-#    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
-#    SIZE          = "63m"
-#  })
-#  tags = {
-#    Name = "s3fs-${local.fio_job_names[count.index]}-63m"
-#  }
-#}
-#
-#resource "aws_instance" "s3fs_1g" {
-#  count                  = length(local.fio_job_names)
-#  ami                    = var.ubuntu
-#  instance_type          = var.instance_type
-#  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
-#  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
-#  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
-#    AWS_REGION    = data.aws_region.current.name,
-#    MOUNT         = "/tmp/s3",
-#    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
-#    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
-#    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-#    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-1g.report",
-#    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-1g.report",
-#    REPORT_BUCKET = aws_s3_bucket.s3fs_results.bucket,
-#    JOBNAME       = local.fio_job_names[count.index],
-#    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
-#    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
-#    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
-#    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
-#    SIZE          = "1g"
-#  })
-#  tags = {
-#    Name = "s3fs-${local.fio_job_names[count.index]}-1g"
-#  }
-#}
-#
-#resource "aws_instance" "s3fs_4g" {
-#  count                  = length(local.fio_job_names)
-#  ami                    = var.ubuntu
-#  instance_type          = var.instance_type
-#  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
-#  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
-#  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
-#    AWS_REGION    = data.aws_region.current.name,
-#    MOUNT         = "/tmp/s3",
-#    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
-#    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
-#    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-#    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-4g.report",
-#    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-4g.report",
-#    REPORT_BUCKET = aws_s3_bucket.s3fs_results.bucket,
-#    JOBNAME       = local.fio_job_names[count.index],
-#    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
-#    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
-#    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
-#    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
-#    SIZE          = "4g"
-#  })
-#  tags = {
-#    Name = "s3fs-${local.fio_job_names[count.index]}-4g"
-#  }
-#}
-#
-#resource "aws_instance" "s3fs_20_5g" {
-#  count                  = length(local.fio_job_names)
-#  ami                    = var.ubuntu
-#  instance_type          = var.instance_type
-#  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
-#  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
-#  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
-#    AWS_REGION    = data.aws_region.current.name,
-#    MOUNT         = "/tmp/s3",
-#    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
-#    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
-#    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
-#    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-20_5g.report",
-#    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-20_5g.report",
-#    REPORT_BUCKET = aws_s3_bucket.s3fs_results.bucket,
-#    JOBNAME       = local.fio_job_names[count.index],
-#    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
-#    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
-#    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
-#    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
-#    SIZE          = "20.5g"
-#  })
-#  tags = {
-#    Name = "s3fs-${local.fio_job_names[count.index]}-20_5g"
-#  }
-#}
-
-output "ec2_s3fs_benchmark_public_ip" {
-  value = local.instances_public_ips
+resource "aws_instance" "s3fs_1m" {
+  count                  = length(local.fio_job_names)
+  ami                    = var.ubuntu
+  instance_type          = var.instance_type
+  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
+  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
+  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
+    AWS_REGION    = data.aws_region.current.name,
+    MOUNT         = "/tmp/s3",
+    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
+    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
+    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-1m.txt",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-1m.txt",
+    REPORT_BUCKET = aws_s3_bucket.reports.bucket,
+    JOBNAME       = local.fio_job_names[count.index],
+    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
+    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
+    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
+    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
+    SIZE          = "1m"
+  })
+  tags = {
+    Name = "s3fs-${local.fio_job_names[count.index]}-1m"
+  }
 }
 
-output "s3fs_benchmark_buckets" {
-  value = local.s3_benchmarks_buckets
+resource "aws_instance" "s3fs_63m" {
+  count                  = length(local.fio_job_names)
+  ami                    = var.ubuntu
+  instance_type          = var.instance_type
+  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
+  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
+  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
+    AWS_REGION    = data.aws_region.current.name,
+    MOUNT         = "/tmp/s3",
+    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
+    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
+    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-63m.txt",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-63m.txt",
+    REPORT_BUCKET = aws_s3_bucket.reports.bucket,
+    JOBNAME       = local.fio_job_names[count.index],
+    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
+    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
+    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
+    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
+    SIZE          = "63m"
+  })
+  tags = {
+    Name = "s3fs-${local.fio_job_names[count.index]}-63m"
+  }
+}
+
+resource "aws_instance" "s3fs_1g" {
+  count                  = length(local.fio_job_names)
+  ami                    = var.ubuntu
+  instance_type          = var.instance_type
+  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
+  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
+  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
+    AWS_REGION    = data.aws_region.current.name,
+    MOUNT         = "/tmp/s3",
+    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
+    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
+    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-1g.txt",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-1g.txt",
+    REPORT_BUCKET = aws_s3_bucket.reports.bucket,
+    JOBNAME       = local.fio_job_names[count.index],
+    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
+    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
+    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
+    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
+    SIZE          = "1g"
+  })
+  tags = {
+    Name = "s3fs-${local.fio_job_names[count.index]}-1g"
+  }
+}
+
+resource "aws_instance" "s3fs_4g" {
+  count                  = length(local.fio_job_names)
+  ami                    = var.ubuntu
+  instance_type          = var.instance_type
+  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
+  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
+  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
+    AWS_REGION    = data.aws_region.current.name,
+    MOUNT         = "/tmp/s3",
+    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
+    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
+    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-4g.txt",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-4g.txt",
+    REPORT_BUCKET = aws_s3_bucket.reports.bucket,
+    JOBNAME       = local.fio_job_names[count.index],
+    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
+    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
+    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
+    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
+    SIZE          = "4g"
+  })
+  tags = {
+    Name = "s3fs-${local.fio_job_names[count.index]}-4g"
+  }
+}
+
+resource "aws_instance" "s3fs_20_5g" {
+  count                  = length(local.fio_job_names)
+  ami                    = var.ubuntu
+  instance_type          = var.instance_type
+  iam_instance_profile   = aws_iam_instance_profile.fuse_benchmark_iam_profile.name
+  vpc_security_group_ids = [aws_security_group.fuse_benchmark_allow_all.id]
+  user_data_replace_on_change = true
+  user_data              = templatefile("${path.module}/configs/s3fs.sh", {
+    AWS_REGION    = data.aws_region.current.name,
+    MOUNT         = "/tmp/s3",
+    BUCKET        = aws_s3_bucket.s3fs_buckets[count.index].bucket,
+    FIO_CONFIG    = "/home/ubuntu/s3fs.fio",
+    IAM_ROLE      = aws_iam_role.fuse_benchmark_iam_role.name,
+    REPORT_NAME   = "s3fs-${local.fio_job_names[count.index]}-20-5g.t",
+    RESULT        = "/home/ubuntu/s3fs-${local.fio_job_names[count.index]}-20-5g.t",
+    REPORT_BUCKET = aws_s3_bucket.reports.bucket,
+    JOBNAME       = local.fio_job_names[count.index],
+    NUMJOBS       = local.fio_jobs_json[local.fio_job_names[count.index]]["numjobs"],
+    FIORW         = local.fio_jobs_json[local.fio_job_names[count.index]]["rw"],
+    RWMIXWRITE    = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixwrite", 50),
+    RWMIXREAD     = lookup(local.fio_jobs_json[local.fio_job_names[count.index]], "rwmixread", 50),
+    SIZE          = "20.5g"
+  })
+  tags = {
+    Name = "s3fs-${local.fio_job_names[count.index]}-20-5g"
+  }
 }
 
 output "s3_benchmark_reports_bucket" {

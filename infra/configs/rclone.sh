@@ -1,6 +1,5 @@
-#!/bin/bash
-set -e
-sudo su
+#!/usr/bin/env bash
+set -ex
 
 apt update -y
 apt install fio -y
