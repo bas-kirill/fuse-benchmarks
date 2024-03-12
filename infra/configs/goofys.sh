@@ -1,30 +1,23 @@
 #!/usr/bin/env bash
 set -ex
 
+touch /home/ubuntu/0.txt
+
 apt update -y
 apt install fio -y
 apt install awscli -y
+apt install make -y
+apt install golang-go -y  # install "go" cli command
 
-mkdir -p /home/filebase/go/src/github.com/kahing
-cd /home/filebase/go/src/github.com/kahing/
 touch /home/ubuntu/00.txt
-git clone https://github.com/kahing/goofys.git
-export GOPATH=/home/filebase/go
-touch /home/ubuntu/000.txt
-export GOOFYS_HOME=/home/filebase/go/src/github.com/kahing/goofys/
-cd /home/filebase/go/src/github.com/kahing/goofys
-touch /home/ubuntu/000.txt
-git submodule init
-git submodule update
-touch /home/ubuntu/0000.txt
-make build
-PATH=$PATH:/home/filebase/go/bin; export PATH
-touch /home/ubuntu/00000.txt
-mkdir /tmp/goofys
+
+wget -P /home/ubuntu https://github.com/kahing/goofys/releases/latest/download/goofys
+chmod +x /home/ubuntu/goofys
+mkdir ${MOUNT}
 
 touch /home/ubuntu/1.txt
 
-$GOPATH/bin/goofys ${BUCKET} ${MOUNT}
+/home/ubuntu/goofys ${BUCKET} ${MOUNT}
 
 touch /home/ubuntu/2.txt
 
