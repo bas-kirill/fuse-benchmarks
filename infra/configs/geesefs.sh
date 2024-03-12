@@ -1,19 +1,24 @@
-#!/bin/bash
-
-touch /home/ubuntu/0.txt
-
-sudo su
+#!/usr/bin/env bash
+set -ex
 
 apt update -y
 apt install fio -y
 apt install awscli -y
+
 apt install golang-go -y  # installing "go" cli command
 git clone https://github.com/yandex-cloud/geesefs /home/ubuntu/geesefs
 cd /home/ubuntu/geesefs
-go build
+
+export HOME=/root
+export GOPATH=$HOME/go
+export GO111MODULE=on
+export GOCACHE=/root/.cache/go-build
+go build ./
 cd /home/ubuntu
 
-/home/ubuntu/geesefs \
+mkdir ${MOUNT}
+
+/home/ubuntu/geesefs/geesefs \
   --no-checksum \
   --memory-limit 4000 \
   --max-flushers 32 \

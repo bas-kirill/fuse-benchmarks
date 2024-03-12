@@ -1,8 +1,5 @@
-#!/bin/bash
-
-touch /home/ubuntu/0.txt
-
-sudo su
+#!/usr/bin/env bash
+set -ex
 
 apt update -y
 apt install fio -y
