@@ -20,13 +20,6 @@ module "goofys" {
   mount = "/tmp/goofys"
 }
 
-module "mount_s3" {
-  source = "./modules/aws_fuse_benchmark"
-  fs = "mount_s3"
-  user_data_template_path = "./configs/mount-s3.sh"
-  mount = "/tmp/mounts3"
-}
-
 module "rclone" {
   source = "./modules/aws_fuse_benchmark"
   fs = "rclone"
